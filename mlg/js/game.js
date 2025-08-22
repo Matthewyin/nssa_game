@@ -1,27 +1,38 @@
 (function () {
   // 槽位容量改为可变，默认 8
   let SLOT_CAPACITY = 8;
-  // 无穷关卡难度标签系统
-  function getDifficultyLabel(level) {
-    if (level <= 5) return "入门";
-    if (level <= 15) return "进阶";
-    if (level <= 30) return "高手";
-    if (level <= 50) return "大师";
-    if (level <= 80) return "宗师";
-    if (level <= 120) return "传说";
-    if (level <= 200) return "史诗";
-    if (level <= 300) return "神话";
-    if (level <= 500) return "至尊";
+  // 10级难度系统：每10关为一级
+  function getDifficultyLevel(level) {
+    return Math.floor((level - 1) / 10) + 1;
+  }
 
-    // 超过500关的超级难度
-    const superLevel = Math.floor((level - 500) / 100);
-    const superLabels = ["无极", "混沌", "太初", "永恒", "无限"];
-    if (superLevel < superLabels.length) {
-      return superLabels[superLevel];
+  function getLevelProgress(level) {
+    return (level - 1) % 10 + 1;
+  }
+
+  function getDifficultyLabel(level) {
+    const diffLevel = getDifficultyLevel(level);
+    const progress = getLevelProgress(level);
+
+    const levelNames = [
+      "入门", "基础", "进阶", "高手", "大师",
+      "宗师", "传说", "史诗", "神话", "至尊"
+    ];
+
+    if (diffLevel <= 10) {
+      return `${levelNames[diffLevel - 1]} ${progress}/10`;
     }
 
-    // 终极难度：显示具体等级
-    return `无限+${superLevel - superLabels.length + 1}`;
+    // 超过100关的超级难度
+    const superLevel = diffLevel - 10;
+    const superLabels = ["无极", "混沌", "太初", "永恒", "无限"];
+    if (superLevel <= superLabels.length) {
+      const labelIndex = Math.min(superLevel - 1, superLabels.length - 1);
+      return `${superLabels[labelIndex]} ${progress}/10`;
+    }
+
+    // 终极难度
+    return `无限+${superLevel - superLabels.length} ${progress}/10`;
   }
 
   function getStorageKey(user) {
@@ -826,50 +837,105 @@
 
     // --- Level Generation ---
     getLevelParams(level) {
-      // 无穷关卡系统：动态计算关卡参数
+      // 10级难度系统：每10关为一级，基于图标种类的核心难度设计
 
-      // 层级数量：8到16层，随关卡递增，确保更好的层次分布
-      const baseLayers = 8; // 从8层开始，分散立方体密度
-      const maxLayers = 16;
-      const layerIncrement = Math.floor((level - 1) / 3); // 每3关增加1层，更快增长
-      const layers = Math.min(baseLayers + layerIncrement, maxLayers);
+      const diffLevel = getDifficultyLevel(level);
+      const progress = getLevelProgress(level);
 
-      // 符号类型数量：初始15个，每关增加2个
-      const baseSymbols = 15;
-      const symbolsPerLevel = 2;
-      const typeCount = Math.min(
-        baseSymbols + (level - 1) * symbolsPerLevel,
-        SYMBOLS.length // 不超过可用符号总数
-      );
+      // 图标种类数量（核心难度因子）
+      let typeCount;
+      if (diffLevel === 1) {
+        // 级别1：6-8种图标
+        typeCount = 6 + Math.floor((progress - 1) * 2 / 9); // 6->8渐进
+      } else if (diffLevel === 2) {
+        // 级别2：8-10种图标
+        typeCount = 8 + Math.floor((progress - 1) * 2 / 9); // 8->10渐进
+      } else if (diffLevel === 3) {
+        // 级别3：10-12种图标
+        typeCount = 10 + Math.floor((progress - 1) * 2 / 9); // 10->12渐进
+      } else if (diffLevel === 4) {
+        // 级别4：12-15种图标
+        typeCount = 12 + Math.floor((progress - 1) * 3 / 9); // 12->15渐进
+      } else {
+        // 级别5+：15-20种图标
+        const baseTypes = 15;
+        const maxTypes = Math.min(20, SYMBOLS.length);
+        const levelBonus = Math.min(diffLevel - 5, 10) * 0.5; // 每级增加0.5种
+        const progressBonus = (progress - 1) * 0.5 / 9; // 关卡内渐进
+        typeCount = Math.floor(baseTypes + levelBonus + progressBonus);
+        typeCount = Math.min(typeCount, maxTypes);
+      }
 
-      // 立方体数量：大幅减少总数，确保分散到更多层级
-      // 可用区域：6×8=48个位置/层（避开边缘）
-      const availablePositionsPerLayer = 48;
-      const targetCubesPerLayer = 10; // 目标每层10个立方体（约21%密度）
-      const baseCubeCount = Math.max(layers * targetCubesPerLayer, 60); // 最少60个立方体
-      const cubeGrowthRate = 1.06; // 每关增长6%
-      const targetCubeCount = Math.floor(baseCubeCount * Math.pow(cubeGrowthRate, level - 1));
+      // 立方体数量（游戏时长因子）
+      let targetCubeCount;
+      if (diffLevel === 1) {
+        // 级别1：30-45个
+        targetCubeCount = 30 + Math.floor((progress - 1) * 15 / 9);
+      } else if (diffLevel === 2) {
+        // 级别2：45-60个
+        targetCubeCount = 45 + Math.floor((progress - 1) * 15 / 9);
+      } else if (diffLevel === 3) {
+        // 级别3：60-80个
+        targetCubeCount = 60 + Math.floor((progress - 1) * 20 / 9);
+      } else if (diffLevel === 4) {
+        // 级别4：80-100个
+        targetCubeCount = 80 + Math.floor((progress - 1) * 20 / 9);
+      } else {
+        // 级别5+：100-150个
+        const baseCubes = 100;
+        const maxCubes = 150;
+        const levelBonus = Math.min(diffLevel - 5, 10) * 5; // 每级增加5个
+        const progressBonus = (progress - 1) * 5 / 9; // 关卡内渐进
+        targetCubeCount = Math.floor(baseCubes + levelBonus + progressBonus);
+        targetCubeCount = Math.min(targetCubeCount, maxCubes);
+      }
 
-      // 优化网格尺寸：使用更紧凑的6×8网格，让立方体更大
-      const cols = 6; // 优化为6列
-      const rows = 8; // 优化为8行
+      // 立方体层数（视觉复杂度）
+      let layers;
+      if (diffLevel === 1) {
+        // 级别1：5-6层
+        layers = 5 + Math.floor((progress - 1) / 5); // 前5关5层，后5关6层
+      } else if (diffLevel === 2) {
+        // 级别2：6-7层
+        layers = 6 + Math.floor((progress - 1) / 5);
+      } else if (diffLevel === 3) {
+        // 级别3：7-8层
+        layers = 7 + Math.floor((progress - 1) / 5);
+      } else if (diffLevel === 4) {
+        // 级别4：8-10层
+        layers = 8 + Math.floor((progress - 1) * 2 / 9);
+      } else {
+        // 级别5+：10-12层
+        const baseLayers = 10;
+        const maxLayers = 12;
+        const levelBonus = Math.min(diffLevel - 5, 5) * 0.2; // 缓慢增长
+        const progressBonus = (progress - 1) * 0.2 / 9;
+        layers = Math.floor(baseLayers + levelBonus + progressBonus);
+        layers = Math.min(layers, maxLayers);
+      }
 
-      // 可用区域：避开边缘后的内部区域
-      const availableCols = cols - 2; // 6列（避开左右边缘）
-      const availableRows = rows - 2; // 8行（避开上下边缘）
+      // 确保立方体数量是3的倍数（匹配游戏规则）
+      targetCubeCount = Math.floor(targetCubeCount / 3) * 3;
+
+      // 网格尺寸：保持6×8网格
+      const cols = 6;
+      const rows = 8;
+      const availableCols = cols - 2; // 避开边缘
+      const availableRows = rows - 2;
       const availableGridSize = availableCols * availableRows; // 48个可用位置
 
-      // 密度调整：基于可用区域计算
-      const maxPossibleCubes = availableGridSize * layers * 0.6; // 假设最大60%填充率
+      // 密度计算
+      const maxPossibleCubes = availableGridSize * layers * 0.6;
       const coverDensity = Math.min(0.8, targetCubeCount / maxPossibleCubes);
 
-      console.log(`关卡 ${level} 参数:`, {
-        layers,
-        typeCount,
-        targetCubeCount,
-        cols,
-        rows,
-        coverDensity: coverDensity.toFixed(2)
+      // 详细的调试信息
+      console.log(`关卡 ${level} (级别${diffLevel}-${progress}) 参数:`, {
+        难度级别: `${getDifficultyLabel(level)}`,
+        图标种类: typeCount,
+        立方体数量: targetCubeCount,
+        层数: layers,
+        网格: `${cols}×${rows}`,
+        密度: `${(coverDensity * 100).toFixed(1)}%`
       });
 
       return {
@@ -878,7 +944,11 @@
         layers,
         typeCount,
         coverDensity,
-        targetCubeCount
+        targetCubeCount,
+        // 新增：难度级别信息
+        difficultyLevel: diffLevel,
+        levelProgress: progress,
+        difficultyLabel: getDifficultyLabel(level)
       };
     },
 
@@ -914,7 +984,13 @@
         });
       }
 
-      console.log(`关卡 ${level} 生成了 ${positions.length} 个立方体 (目标: ${targetCount})`);
+      console.log(`关卡 ${level} (${params.difficultyLabel}) 生成:`, {
+        立方体数量: positions.length,
+        目标数量: targetCount,
+        图标种类: params.typeCount,
+        层数: params.layers,
+        三消组数: Math.floor(positions.length / 3)
+      });
 
       // 如果位置不足，补充到最接近的3的倍数
       const remainder = positions.length % 3;

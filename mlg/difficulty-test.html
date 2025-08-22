@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>难度系统测试</title>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .test-container { max-width: 1000px; margin: 0 auto; }
+        .level-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .level-card { background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; }
+        .level-1 { border-left-color: #4caf50; }
+        .level-2 { border-left-color: #8bc34a; }
+        .level-3 { border-left-color: #ffc107; }
+        .level-4 { border-left-color: #ff9800; }
+        .level-5 { border-left-color: #f44336; }
+        .level-title { font-weight: bold; color: #333; margin-bottom: 8px; }
+        .level-stats { font-size: 12px; color: #666; }
+        .level-stats div { margin: 2px 0; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; background: #2196f3; color: white; cursor: pointer; }
+        .summary { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>MLG难度系统测试</h1>
+        
+        <div>
+            <button onclick="testDifficultySystem()">测试难度系统</button>
+            <button onclick="testSpecificLevels()">测试特定关卡</button>
+            <button onclick="showDifficultyCurve()">显示难度曲线</button>
+        </div>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // 复制游戏中的难度计算函数
+        function getDifficultyLevel(level) {
+            return Math.floor((level - 1) / 10) + 1;
+        }
+        
+        function getLevelProgress(level) {
+            return (level - 1) % 10 + 1;
+        }
+        
+        function getDifficultyLabel(level) {
+            const diffLevel = getDifficultyLevel(level);
+            const progress = getLevelProgress(level);
+            
+            const levelNames = [
+                "入门", "基础", "进阶", "高手", "大师", 
+                "宗师", "传说", "史诗", "神话", "至尊"
+            ];
+            
+            if (diffLevel <= 10) {
+                return `${levelNames[diffLevel - 1]} ${progress}/10`;
+            }
+            
+            const superLevel = diffLevel - 10;
+            const superLabels = ["无极", "混沌", "太初", "永恒", "无限"];
+            if (superLevel <= superLabels.length) {
+                const labelIndex = Math.min(superLevel - 1, superLabels.length - 1);
+                return `${superLabels[labelIndex]} ${progress}/10`;
+            }
+            
+            return `无限+${superLevel - superLabels.length} ${progress}/10`;
+        }
+        
+        function calculateLevelParams(level) {
+            const diffLevel = getDifficultyLevel(level);
+            const progress = getLevelProgress(level);
+            
+            // 图标种类数量
+            let typeCount;
+            if (diffLevel === 1) {
+                typeCount = 6 + Math.floor((progress - 1) * 2 / 9);
+            } else if (diffLevel === 2) {
+                typeCount = 8 + Math.floor((progress - 1) * 2 / 9);
+            } else if (diffLevel === 3) {
+                typeCount = 10 + Math.floor((progress - 1) * 2 / 9);
+            } else if (diffLevel === 4) {
+                typeCount = 12 + Math.floor((progress - 1) * 3 / 9);
+            } else {
+                const baseTypes = 15;
+                const maxTypes = 20;
+                const levelBonus = Math.min(diffLevel - 5, 10) * 0.5;
+                const progressBonus = (progress - 1) * 0.5 / 9;
+                typeCount = Math.floor(baseTypes + levelBonus + progressBonus);
+                typeCount = Math.min(typeCount, maxTypes);
+            }
+            
+            // 立方体数量
+            let targetCubeCount;
+            if (diffLevel === 1) {
+                targetCubeCount = 30 + Math.floor((progress - 1) * 15 / 9);
+            } else if (diffLevel === 2) {
+                targetCubeCount = 45 + Math.floor((progress - 1) * 15 / 9);
+            } else if (diffLevel === 3) {
+                targetCubeCount = 60 + Math.floor((progress - 1) * 20 / 9);
+            } else if (diffLevel === 4) {
+                targetCubeCount = 80 + Math.floor((progress - 1) * 20 / 9);
+            } else {
+                const baseCubes = 100;
+                const maxCubes = 150;
+                const levelBonus = Math.min(diffLevel - 5, 10) * 5;
+                const progressBonus = (progress - 1) * 5 / 9;
+                targetCubeCount = Math.floor(baseCubes + levelBonus + progressBonus);
+                targetCubeCount = Math.min(targetCubeCount, maxCubes);
+            }
+            
+            // 立方体层数
+            let layers;
+            if (diffLevel === 1) {
+                layers = 5 + Math.floor((progress - 1) / 5);
+            } else if (diffLevel === 2) {
+                layers = 6 + Math.floor((progress - 1) / 5);
+            } else if (diffLevel === 3) {
+                layers = 7 + Math.floor((progress - 1) / 5);
+            } else if (diffLevel === 4) {
+                layers = 8 + Math.floor((progress - 1) * 2 / 9);
+            } else {
+                const baseLayers = 10;
+                const maxLayers = 12;
+                const levelBonus = Math.min(diffLevel - 5, 5) * 0.2;
+                const progressBonus = (progress - 1) * 0.2 / 9;
+                layers = Math.floor(baseLayers + levelBonus + progressBonus);
+                layers = Math.min(layers, maxLayers);
+            }
+            
+            targetCubeCount = Math.floor(targetCubeCount / 3) * 3;
+            
+            return {
+                diffLevel,
+                progress,
+                typeCount,
+                targetCubeCount,
+                layers,
+                difficultyLabel: getDifficultyLabel(level)
+            };
+        }
+        
+        function testDifficultySystem() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '<h2>10级难度系统测试</h2>';
+            
+            const testLevels = [1, 5, 10, 11, 15, 20, 21, 25, 30, 31, 35, 40, 41, 45, 50, 60, 70, 80, 90, 100];
+            const grid = document.createElement('div');
+            grid.className = 'level-grid';
+            
+            testLevels.forEach(level => {
+                const params = calculateLevelParams(level);
+                const card = document.createElement('div');
+                card.className = `level-card level-${params.diffLevel}`;
+                
+                card.innerHTML = `
+                    <div class="level-title">关卡 ${level}</div>
+                    <div class="level-stats">
+                        <div><strong>${params.difficultyLabel}</strong></div>
+                        <div>图标种类: ${params.typeCount}</div>
+                        <div>立方体数: ${params.targetCubeCount}</div>
+                        <div>层数: ${params.layers}</div>
+                        <div>三消组数: ${params.targetCubeCount / 3}</div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+            container.appendChild(grid);
+        }
+        
+        function testSpecificLevels() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '<h2>各级别首末关卡对比</h2>';
+            
+            const summary = document.createElement('div');
+            summary.className = 'summary';
+            
+            let summaryHTML = '<h3>难度级别总览</h3><table border="1" style="width:100%; border-collapse:collapse;"><tr><th>级别</th><th>关卡范围</th><th>图标种类</th><th>立方体数量</th><th>层数</th></tr>';
+            
+            for (let level = 1; level <= 10; level++) {
+                const startLevel = (level - 1) * 10 + 1;
+                const endLevel = level * 10;
+                const startParams = calculateLevelParams(startLevel);
+                const endParams = calculateLevelParams(endLevel);
+                
+                summaryHTML += `
+                    <tr>
+                        <td>级别${level}</td>
+                        <td>${startLevel}-${endLevel}</td>
+                        <td>${startParams.typeCount}-${endParams.typeCount}</td>
+                        <td>${startParams.targetCubeCount}-${endParams.targetCubeCount}</td>
+                        <td>${startParams.layers}-${endParams.layers}</td>
+                    </tr>
+                `;
+            }
+            
+            summaryHTML += '</table>';
+            summary.innerHTML = summaryHTML;
+            container.appendChild(summary);
+        }
+        
+        function showDifficultyCurve() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '<h2>难度曲线分析</h2>';
+            
+            const analysis = document.createElement('div');
+            analysis.className = 'summary';
+            
+            let analysisHTML = '<h3>关键节点分析</h3>';
+            const keyLevels = [1, 10, 11, 20, 21, 30, 31, 40, 41, 50];
+            
+            keyLevels.forEach(level => {
+                const params = calculateLevelParams(level);
+                analysisHTML += `
+                    <p><strong>关卡${level}</strong> (${params.difficultyLabel}): 
+                    ${params.typeCount}种图标, ${params.targetCubeCount}个立方体, ${params.layers}层</p>
+                `;
+            });
+            
+            analysis.innerHTML = analysisHTML;
+            container.appendChild(analysis);
+        }
+        
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            testDifficultySystem();
+        });
+    </script>
+</body>
+</html>
