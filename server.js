@@ -19,11 +19,34 @@ app.get('/mlg', (req, res) => {
     res.sendFile(path.join(__dirname, 'mlg', 'index.html'));
 });
 
+// 健康检查端点
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // 处理所有其他路由，返回 index.html (SPA 支持)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Health check available at: http://0.0.0.0:${PORT}/health`);
+});
+
+// 优雅关闭
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 });

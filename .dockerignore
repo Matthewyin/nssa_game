@@ -1,0 +1,9 @@
+# 忽略不必要的文件
+.git
+.gitignore
+README.md
+.firebase
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore

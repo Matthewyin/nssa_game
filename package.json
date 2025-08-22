@@ -7,7 +7,8 @@
     "start": "node server.js",
     "build": "echo 'Static site - no build needed'",
     "deploy": "firebase deploy",
-    "serve": "firebase serve"
+    "serve": "firebase serve",
+    "dev": "node server.js"
   },
   "keywords": ["games", "gomoku", "mlg", "firebase"],
   "author": "NSSA",
