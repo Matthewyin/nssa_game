@@ -27,10 +27,10 @@ NSSA Games 是一个集合了多个在线游戏的平台，目前包含五子棋
 
 ## 🚀 部署信息
 
-- **访问地址**: https://n8n-project-460516.web.app
+- **访问地址**: https://nssa-game-matthew.web.app
 - **部署平台**: Firebase Hosting
 - **技术栈**: HTML5, JavaScript, Tailwind CSS, Firebase
-- **项目控制台**: https://console.firebase.google.com/project/n8n-project-460516/overview
+- **项目控制台**: https://console.firebase.google.com/project/nssa-game-matthew/overview
 
 ## 📁 项目结构
 
@@ -129,6 +129,11 @@ firebase deploy
 - ✅ 部署到 Firebase App Hosting
 - ✅ 清理原 nssa_tools 中的游戏文件
 
+### v1.0.1 (2025-08-22)
+- ✅ 创建专用的 Firebase 项目 (nssa-game-matthew)
+- ✅ 更新部署地址为 https://nssa-game-matthew.web.app
+- ✅ 分离项目配置，避免与其他 Firebase 应用冲突
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request 来改进游戏体验！
@@ -140,8 +145,8 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ## 🔗 相关链接
 
 - **GitHub 仓库**: https://github.com/Matthewyin/nssa_game
-- **在线体验**: https://n8n-project-460516.web.app
-- **Firebase 控制台**: https://console.firebase.google.com/project/n8n-project-460516/overview
+- **在线体验**: https://nssa-game-matthew.web.app
+- **Firebase 控制台**: https://console.firebase.google.com/project/nssa-game-matthew/overview
 - **原项目**: https://github.com/Matthewyin/nssa_tools
 
 ---
