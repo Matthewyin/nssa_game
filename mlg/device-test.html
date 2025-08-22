@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备兼容性测试</title>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .test-info { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .android { background: #e8f5e8; }
+        .ios { background: #e3f2fd; }
+        .desktop { background: #fff3e0; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; background: #2196f3; color: white; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>MLG设备兼容性测试</h1>
+    
+    <div>
+        <button onclick="runDeviceTest()">运行设备检测</button>
+        <button onclick="runLayoutTest()">测试布局计算</button>
+        <button onclick="simulateAndroid()">模拟Android设备</button>
+        <button onclick="simulateIPhone()">模拟iPhone设备</button>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        const resultsContainer = document.getElementById('test-results');
+        
+        function addResult(title, content, type = 'test-info') {
+            const div = document.createElement('div');
+            div.className = `test-info ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsContainer.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsContainer.innerHTML = '';
+        }
+        
+        // 模拟游戏的设备检测函数
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            const screenWidth = window.innerWidth;
+            const isAndroid = /Android/i.test(ua);
+            const isIPhone = /iPhone/i.test(ua);
+            const isIPad = /iPad/i.test(ua);
+            const isMobile = screenWidth <= 768;
+            const isTablet = screenWidth > 768 && screenWidth <= 1024;
+            
+            return {
+                isAndroid,
+                isIPhone,
+                isIPad,
+                isMobile,
+                isTablet,
+                isIOS: isIPhone || isIPad,
+                needsSpecialHandling: isAndroid && isMobile,
+                screenWidth
+            };
+        }
+        
+        function runDeviceTest() {
+            clearResults();
+            
+            const deviceInfo = getDeviceInfo();
+            const deviceType = deviceInfo.needsSpecialHandling ? 'android' : 
+                              deviceInfo.isIPhone ? 'ios' : 
+                              deviceInfo.isIPad ? 'ios' : 'desktop';
+            
+            addResult('设备检测结果', JSON.stringify({
+                用户代理: navigator.userAgent,
+                设备信息: deviceInfo,
+                屏幕尺寸: `${window.innerWidth}×${window.innerHeight}`,
+                设备像素比: window.devicePixelRatio,
+                视口信息: window.visualViewport ? {
+                    宽度: window.visualViewport.width,
+                    高度: window.visualViewport.height,
+                    缩放: window.visualViewport.scale
+                } : '不支持visualViewport'
+            }, null, 2), deviceType);
+        }
+        
+        function runLayoutTest() {
+            const deviceInfo = getDeviceInfo();
+            
+            // 模拟游戏的边距计算
+            let margin;
+            if (deviceInfo.needsSpecialHandling) {
+                margin = 8; // Android手机
+            } else if (deviceInfo.isMobile) {
+                margin = 6; // iPhone等其他手机
+            } else if (deviceInfo.isTablet) {
+                margin = 12;
+            } else {
+                margin = 16;
+            }
+            
+            // 模拟画布尺寸（假设画布占据大部分屏幕）
+            const cssWidth = window.innerWidth * 0.9;
+            const cssHeight = window.innerHeight * 0.6;
+            
+            const availableWidth = Math.max(200, cssWidth - margin * 2);
+            const availableHeight = Math.max(200, cssHeight - margin * 2);
+            
+            // 网格参数
+            const gridCols = 8;
+            const gridRows = 10;
+            const maxLayers = 8;
+            
+            // 立方体大小计算
+            let minCellSize;
+            if (deviceInfo.needsSpecialHandling) {
+                minCellSize = 40; // Android
+            } else if (deviceInfo.isMobile) {
+                minCellSize = 48; // iPhone
+            } else if (deviceInfo.isTablet) {
+                minCellSize = 42;
+            } else {
+                minCellSize = 40;
+            }
+            
+            const maxCellWidth = Math.floor(availableWidth / gridCols);
+            const maxCellHeight = Math.floor(availableHeight / gridRows);
+            const cellSize = Math.max(minCellSize, Math.min(maxCellWidth, maxCellHeight));
+            
+            const cubeWidth = cellSize;
+            const cubeHeight = Math.floor(cellSize * 1.1);
+            
+            // 计算总尺寸
+            const baseGridWidth = gridCols * cubeWidth;
+            const baseGridHeight = gridRows * cubeHeight;
+            const maxLayerOffset = (maxLayers - 1) * cubeWidth * 0.35;
+            const totalWidth = baseGridWidth + maxLayerOffset;
+            const totalHeight = baseGridHeight + maxLayerOffset;
+            
+            const deviceType = deviceInfo.needsSpecialHandling ? 'android' : 
+                              deviceInfo.isIPhone ? 'ios' : 
+                              deviceInfo.isIPad ? 'ios' : 'desktop';
+            
+            addResult('布局计算结果', JSON.stringify({
+                设备类型: deviceType,
+                边距设置: margin,
+                画布尺寸: `${Math.round(cssWidth)}×${Math.round(cssHeight)}`,
+                可用空间: `${availableWidth}×${availableHeight}`,
+                最小立方体大小: minCellSize,
+                实际立方体大小: `${cubeWidth}×${cubeHeight}`,
+                网格总尺寸: `${baseGridWidth}×${baseGridHeight}`,
+                包含偏移总尺寸: `${totalWidth}×${totalHeight}`,
+                空间充足性: {
+                    宽度: totalWidth <= cssWidth - margin * 2 ? '充足' : '不足',
+                    高度: totalHeight <= cssHeight - margin * 2 ? '充足' : '不足'
+                }
+            }, null, 2), deviceType);
+        }
+        
+        function simulateAndroid() {
+            // 临时修改用户代理字符串进行测试
+            Object.defineProperty(navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+                configurable: true
+            });
+            
+            addResult('模拟Android设备', '已临时修改用户代理字符串，请重新运行测试', 'android');
+        }
+        
+        function simulateIPhone() {
+            // 临时修改用户代理字符串进行测试
+            Object.defineProperty(navigator, 'userAgent', {
+                value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1',
+                configurable: true
+            });
+            
+            addResult('模拟iPhone设备', '已临时修改用户代理字符串，请重新运行测试', 'ios');
+        }
+        
+        // 页面加载时自动运行测试
+        window.addEventListener('load', () => {
+            runDeviceTest();
+            runLayoutTest();
+        });
+    </script>
+</body>
+</html>

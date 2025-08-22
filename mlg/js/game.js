@@ -485,9 +485,10 @@
           );
         }
 
-        // 检测移动端并调整间距
-        const isMobile = window.innerWidth <= 768;
-        const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+        // 使用统一的设备检测
+        const deviceInfo = this.getDeviceInfo();
+        const isMobile = deviceInfo.isMobile;
+        const isTablet = deviceInfo.isTablet;
 
         // 其他垂直间距（根据设备类型调整）
         let extraGaps;
@@ -1323,17 +1324,48 @@
       return rects;
     },
 
+    // 设备信息检测
+    getDeviceInfo() {
+      const ua = navigator.userAgent;
+      const screenWidth = window.innerWidth;
+      const isAndroid = /Android/i.test(ua);
+      const isIPhone = /iPhone/i.test(ua);
+      const isIPad = /iPad/i.test(ua);
+      const isMobile = screenWidth <= 768;
+      const isTablet = screenWidth > 768 && screenWidth <= 1024;
+
+      return {
+        isAndroid,
+        isIPhone,
+        isIPad,
+        isMobile,
+        isTablet,
+        isIOS: isIPhone || isIPad,
+        needsSpecialHandling: isAndroid && isMobile,
+        screenWidth
+      };
+    },
+
     // 固定网格系统方法
     computeTileRects() {
       // 固定网格系统：使用简化的计算逻辑，确保稳定显示
       const params = this.getLevelParams(this.state.level);
-      const screenWidth = window.innerWidth;
+      const deviceInfo = this.getDeviceInfo();
       const maxLayers = params.layers;
 
-      // 设备检测和边距设置
-      const isMobile = screenWidth <= 768;
-      const isTablet = screenWidth > 768 && screenWidth <= 1024;
-      const margin = isMobile ? 6 : isTablet ? 12 : 16;
+      // 设备特异性边距设置
+      let margin;
+      if (deviceInfo.needsSpecialHandling) {
+        // Android手机：使用更保守的边距，与CSS padding保持一致
+        margin = 8;
+      } else if (deviceInfo.isMobile) {
+        // iPhone等其他手机：保持现有设置
+        margin = 6;
+      } else if (deviceInfo.isTablet) {
+        margin = 12;
+      } else {
+        margin = 16;
+      }
 
       // 计算可用空间
       const availableWidth = Math.max(200, this.cssWidth - margin * 2);
@@ -1353,8 +1385,19 @@
       const maxCellWidth = Math.floor(effectiveWidth / gridCols);
       const maxCellHeight = Math.floor(effectiveHeight / gridRows);
 
-      // 设备相关的最小格子大小 - 大幅增加手机端大小
-      const minCellSize = isMobile ? 48 : isTablet ? 42 : 40;
+      // 设备特异性最小格子大小
+      let minCellSize;
+      if (deviceInfo.needsSpecialHandling) {
+        // Android手机：使用更小的最小尺寸，优先保证可玩性
+        minCellSize = 40;
+      } else if (deviceInfo.isMobile) {
+        // iPhone等其他手机：保持现有设置
+        minCellSize = 48;
+      } else if (deviceInfo.isTablet) {
+        minCellSize = 42;
+      } else {
+        minCellSize = 40;
+      }
 
       // 选择合适的格子大小（保持接近正方形）
       const cellSize = Math.max(minCellSize, Math.min(maxCellWidth, maxCellHeight));
@@ -1373,37 +1416,69 @@
       const totalWidth = baseGridWidth + maxLayerOffset;
       const totalHeight = baseGridHeight + maxLayerOffset;
 
-      // 居中计算
-      const startX = Math.max(margin, (this.cssWidth - totalWidth) / 2);
+      // 增强边界检查：确保所有立方体都在可视区域内
+      let startX, startY;
+
+      // 计算最大可能的立方体位置（考虑层级偏移）
+      const maxLayerOffsetX = (maxLayers - 1) * cubeWidth * 0.35;
+      const maxLayerOffsetY = (maxLayers - 1) * cubeWidth * 0.35;
+      const maxTileX = baseGridWidth + maxLayerOffsetX;
+      const maxTileY = baseGridHeight + maxLayerOffsetY;
+
+      // 水平位置计算
+      if (totalWidth <= this.cssWidth - margin * 2) {
+        // 内容能完全显示，居中
+        startX = Math.max(margin, (this.cssWidth - totalWidth) / 2);
+      } else {
+        // 内容超出，确保右边界不超出
+        startX = Math.max(margin, this.cssWidth - maxTileX - margin);
+      }
 
       // 根据设备类型调整垂直位置
       let verticalAdjustment;
-      if (isMobile) {
-        // 移动端：棋盘更靠上，给底部更多空间避免被浏览器UI遮挡
+      if (deviceInfo.needsSpecialHandling) {
+        // Android手机：更保守的调整
+        verticalAdjustment = -15;
+      } else if (deviceInfo.isMobile) {
+        // iPhone等其他手机：保持现有设置
         verticalAdjustment = -20;
-      } else if (isTablet) {
-        // 平板端：适中调整
+      } else if (deviceInfo.isTablet) {
         verticalAdjustment = -15;
       } else {
-        // PC端：轻微调整
         verticalAdjustment = -10;
       }
 
-      // 计算垂直起始位置
-      const startY = Math.max(margin, (this.cssHeight - totalHeight) / 2 + verticalAdjustment);
+      // 垂直位置计算
+      if (totalHeight <= this.cssHeight - margin * 2) {
+        // 内容能完全显示，居中
+        startY = Math.max(margin, (this.cssHeight - totalHeight) / 2 + verticalAdjustment);
+      } else {
+        // 内容超出，确保下边界不超出
+        startY = Math.max(margin, this.cssHeight - maxTileY - margin);
+      }
 
-      // 调试信息
-      if (isMobile || window.location.search.includes('debug')) {
-        console.log('固定网格系统:', {
-          设备类型: isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop',
-          屏幕宽度: screenWidth,
-          画布尺寸: `${this.cssWidth}×${this.cssHeight}`,
-          可用空间: `${availableWidth}×${availableHeight}`,
-          网格参数: `${gridCols}列×${gridRows}行×${maxLayers}层`,
-          格子大小: cellSize,
-          立方体尺寸: `${cubeWidth}×${cubeHeight}`,
-          网格总尺寸: `${baseGridWidth}×${baseGridHeight}`,
-          起始位置: `${Math.round(startX)},${Math.round(startY)}`
+      // 增强调试信息
+      if (deviceInfo.isMobile || window.location.search.includes('debug')) {
+        console.log('固定网格系统 (优化版):', {
+          设备信息: {
+            类型: deviceInfo.needsSpecialHandling ? 'Android手机' :
+                  deviceInfo.isIPhone ? 'iPhone' :
+                  deviceInfo.isIPad ? 'iPad' :
+                  deviceInfo.isTablet ? 'Tablet' : 'Desktop',
+            屏幕宽度: deviceInfo.screenWidth,
+            用户代理: navigator.userAgent.substring(0, 50) + '...'
+          },
+          布局参数: {
+            画布尺寸: `${this.cssWidth}×${this.cssHeight}`,
+            边距: margin,
+            可用空间: `${availableWidth}×${availableHeight}`,
+            网格参数: `${gridCols}列×${gridRows}行×${maxLayers}层`,
+            格子大小: cellSize,
+            立方体尺寸: `${cubeWidth}×${cubeHeight}`,
+            网格总尺寸: `${baseGridWidth}×${baseGridHeight}`,
+            最大偏移: `${maxLayerOffsetX}×${maxLayerOffsetY}`,
+            起始位置: `${Math.round(startX)},${Math.round(startY)}`
+          }
         });
       }
 
@@ -1430,7 +1505,42 @@
         });
       }
 
+      // 运行时边界验证
+      this.validateTileBounds(rects, deviceInfo);
+
       return rects;
+    },
+
+    // 验证立方体边界，确保所有立方体都在可视区域内
+    validateTileBounds(rects, deviceInfo) {
+      if (!deviceInfo.needsSpecialHandling) return; // 只对Android设备进行特殊检查
+
+      let maxX = 0, maxY = 0;
+      let outOfBoundsCount = 0;
+
+      for (const [tileId, rect] of rects) {
+        const rightEdge = rect.x + rect.w;
+        const bottomEdge = rect.y + rect.h;
+
+        maxX = Math.max(maxX, rightEdge);
+        maxY = Math.max(maxY, bottomEdge);
+
+        // 检查是否超出边界
+        if (rightEdge > this.cssWidth - 4 || bottomEdge > this.cssHeight - 4) {
+          outOfBoundsCount++;
+        }
+      }
+
+      // 如果有立方体超出边界，记录警告
+      if (outOfBoundsCount > 0) {
+        console.warn('Android设备边界检查:', {
+          超出边界立方体数: outOfBoundsCount,
+          最大X坐标: maxX,
+          最大Y坐标: maxY,
+          画布尺寸: `${this.cssWidth}×${this.cssHeight}`,
+          建议: '可能需要进一步缩小立方体或调整布局'
+        });
+      }
     },
 
     isCovered(tile, rects) {
