@@ -1,0 +1,16 @@
+{
+  "name": "nssa-game",
+  "version": "1.0.0",
+  "description": "NSSA Games Collection",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "firebase deploy",
+    "serve": "firebase serve"
+  },
+  "keywords": ["games", "gomoku", "mlg", "firebase"],
+  "author": "NSSA",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

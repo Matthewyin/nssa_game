@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/Gomoku/**",
+        "destination": "/Gomoku/index.html"
+      },
+      {
+        "source": "/mlg/**",
+        "destination": "/mlg/index.html"
+      },
+      {
+        "source": "/**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSSA Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=design_services" />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .game-card {
+            transition: all 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .game-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-slate-800 mb-4">NSSA Games</h1>
+            <p class="text-slate-600 text-lg">选择你喜欢的游戏开始玩耍</p>
+            <div class="text-sm flex items-center justify-center gap-2 mt-4">
+                <span id="user-email" class="text-slate-600">加载中...</span>
+                <a href="#" id="login-open" class="text-blue-600 hover:underline" style="display: none;">登录</a>
+                <a href="#" id="logout-link" class="text-red-600 hover:underline" style="display: none;">退出</a>
+            </div>
+        </header>
+
+        <main class="max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Gomoku Game Card -->
+                <a href="/Gomoku/" class="game-card bg-white rounded-xl shadow-lg p-6 block">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="game-icon">⚫</div>
+                        <div>
+                            <h2 class="text-2xl font-semibold text-slate-800">五子棋</h2>
+                            <p class="text-slate-600">人机对战 • 双人对战</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mb-4">经典的五子棋游戏，支持AI对战和双人对战模式，多种难度等级可选。</p>
+                    <div class="flex items-center text-sm text-slate-500">
+                        <span class="mr-4">🤖 AI对战</span>
+                        <span class="mr-4">👥 双人对战</span>
+                        <span>🏆 成就系统</span>
+                    </div>
+                </a>
+
+                <!-- MLG Game Card -->
+                <a href="/mlg/" class="game-card bg-white rounded-xl shadow-lg p-6 block">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="game-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🎮</div>
+                        <div>
+                            <h2 class="text-2xl font-semibold text-slate-800">哈吉喵</h2>
+                            <p class="text-slate-600">策略消除 • 关卡挑战</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mb-4">有趣的消除类游戏，包含多个关卡和道具系统，考验你的策略思维。</p>
+                    <div class="flex items-center text-sm text-slate-500">
+                        <span class="mr-4">🎯 关卡系统</span>
+                        <span class="mr-4">🎁 道具系统</span>
+                        <span>💾 存档功能</span>
+                    </div>
+                </a>
+            </div>
+        </main>
+
+        <footer class="text-center mt-16 text-slate-500 text-sm">
+            <p>&copy; 2024 NSSA Games. 仅供娱乐用途。</p>
+        </footer>
+    </div>
+
+    <!-- 登录模态框 -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm mx-4">
+            <h2 class="text-xl font-semibold mb-4">登录 NSSA Games</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-700">邮箱</label>
+                    <input type="email" id="login-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-700">密码</label>
+                    <input type="password" id="login-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="login-error" class="text-red-600 text-sm hidden"></div>
+                <div class="flex gap-2">
+                    <button type="button" id="login-cancel" class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">取消</button>
+                    <button type="submit" id="login-submit" class="flex-1 px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700">登录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 设置 favicon
+        (function(){
+            function setFavicon(){
+                try{
+                    var size=64, c=document.createElement('canvas'); c.width=size; c.height=size; var ctx=c.getContext('2d');
+                    function draw(){
+                        ctx.clearRect(0,0,size,size);
+                        ctx.fillStyle='#0a84ff';
+                        ctx.textAlign='center'; ctx.textBaseline='middle';
+                        ctx.font='48px "Material Symbols Outlined"';
+                        ctx.fillText('design_services', size/2, size/2+2);
+                        var url=c.toDataURL('image/png');
+                        var link=document.querySelector('link[rel="icon"][data-dynamic="1"]');
+                        if(!link){ link=document.createElement('link'); link.rel='icon'; link.type='image/png'; link.setAttribute('data-dynamic','1'); document.head.appendChild(link); }
+                        link.href=url;
+                    }
+                    if(document.fonts && document.fonts.load){ document.fonts.load('48px "Material Symbols Outlined"').then(draw, draw); } else { setTimeout(draw, 300); }
+                }catch(e){}
+            }
+            setFavicon();
+        })();
+
+        // 初始化 Firebase（可选登录：支持游客模式）
+        if (window.__FIREBASE_CONFIG__) {
+            if (firebase.apps && firebase.apps.length === 0) {
+                firebase.initializeApp(window.__FIREBASE_CONFIG__);
+            }
+            firebase.auth().onAuthStateChanged(user => {
+                // 更新用户界面显示
+                const userEmailEl = document.getElementById('user-email');
+                const loginLink = document.getElementById('login-open');
+                const logoutLink = document.getElementById('logout-link');
+
+                if (user) {
+                    // 已登录状态
+                    if (userEmailEl) userEmailEl.textContent = user.email || '';
+                    if (loginLink) loginLink.style.display = 'none';
+                    if (logoutLink) logoutLink.style.display = 'inline';
+                } else {
+                    // 游客模式
+                    if (userEmailEl) userEmailEl.textContent = '游客模式';
+                    if (loginLink) loginLink.style.display = 'inline';
+                    if (logoutLink) logoutLink.style.display = 'none';
+                }
+            });
+        }
+
+        // 统一登出：项目内点击退出时，先 signOut 再清服务器 Cookie
+        (function(){
+          var logoutLink = document.getElementById('logout-link');
+          if (!logoutLink){
+            return;
+          }
+          logoutLink.addEventListener('click', async function(e){
+            e.preventDefault();
+            try{ if (window.firebase && firebase.apps && firebase.apps.length){ await firebase.auth().signOut(); } }catch(e){}
+            window.location.href = '/auth/logout';
+          });
+        })();
+
+        // 登录相关逻辑
+        function setupAuthHandlers() {
+            const loginModal = document.getElementById('login-modal');
+            const loginForm = document.getElementById('login-form');
+            const loginOpen = document.getElementById('login-open');
+            const loginCancel = document.getElementById('login-cancel');
+            const logoutLink = document.getElementById('logout-link');
+            const loginError = document.getElementById('login-error');
+
+            // 打开登录模态框
+            if (loginOpen) {
+                loginOpen.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loginModal.classList.remove('hidden');
+                });
+            }
+
+            // 关闭登录模态框
+            if (loginCancel) {
+                loginCancel.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                    loginError.classList.add('hidden');
+                });
+            }
+
+            // 点击模态框外部关闭
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.classList.add('hidden');
+                    loginError.classList.add('hidden');
+                }
+            });
+
+            // 登录表单提交
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+
+                    try {
+                        loginError.classList.add('hidden');
+                        const auth = firebase.auth();
+                        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+
+                        // 持久化会话到Worker
+                        const idToken = await userCredential.user.getIdToken(true);
+                        await fetch('/auth/session', {
+                            method: 'POST',
+                            headers: { 'content-type': 'application/json' },
+                            body: JSON.stringify({ idToken })
+                        });
+
+                        loginModal.classList.add('hidden');
+                    } catch (error) {
+                        loginError.textContent = error.message || '登录失败，请重试';
+                        loginError.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // 登出处理
+            if (logoutLink) {
+                logoutLink.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        if (window.firebase && firebase.apps && firebase.apps.length) {
+                            await firebase.auth().signOut();
+                        }
+                    } catch (e) {}
+                    // 清除服务器会话
+                    window.location.href = '/auth/logout';
+                });
+            }
+        }
+
+        // 在Firebase初始化后设置认证处理器
+        if (window.__FIREBASE_CONFIG__) {
+            setupAuthHandlers();
+        }
+    </script>
+</body>
+</html>
