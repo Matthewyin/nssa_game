@@ -1118,10 +1118,25 @@
       console.log('立方体遮挡关系计算完成:', tiles.length, '个立方体');
     },
 
+    // 更新遮挡关系（当立方体被消除后调用）
+    updateOcclusionRelations() {
+      // 只为仍在棋盘上的立方体重新计算遮挡关系
+      const activeTiles = this.tiles.filter(t => t.status === 'board');
+
+      activeTiles.forEach(tile => {
+        const occlusion = this.analyzeOcclusionForTile(tile, this.tiles);
+        tile.occlusion = occlusion;
+      });
+
+      console.log('遮挡关系已更新，活跃立方体数量:', activeTiles.length);
+    },
+
     analyzeOcclusionForTile(targetTile, allTiles) {
-      // 找到所有在目标立方体上方的立方体
+      // 找到所有在目标立方体上方且未被消除的立方体
       const upperTiles = allTiles.filter(t =>
-        t.layer > targetTile.layer && t.id !== targetTile.id
+        t.layer > targetTile.layer &&
+        t.id !== targetTile.id &&
+        t.status !== 'gone' // 只考虑未被消除的立方体
       );
 
       // 检查田字格完全遮挡（4个立方体形成2×2网格）
@@ -1664,6 +1679,15 @@
 
       // 检查立方体是否被遮挡而不可点击
       if (tile.occlusion && !tile.occlusion.clickable) {
+        console.log('立方体被遮挡详情:', {
+          立方体ID: tile.id,
+          位置: `(${tile.row}, ${tile.col}) 层${tile.layer}`,
+          遮挡类型: tile.occlusion.type,
+          遮挡描述: tile.occlusion.description,
+          遮挡立方体: tile.occlusion.blockingTiles.map(t =>
+            `ID${t.id}:(${t.row},${t.col})层${t.layer}状态${t.status || '未知'}`
+          )
+        });
         this.showOcclusionMessage(tile);
         return;
       }
@@ -1814,6 +1838,9 @@
               const tile = this.tiles.find(t => t.id === id);
               if (tile) tile.status = "gone";
             }
+
+            // 重新计算遮挡关系，因为有立方体被消除了
+            this.updateOcclusionRelations();
 
             // 只处理一种类型，然后重新开始循环
             break;

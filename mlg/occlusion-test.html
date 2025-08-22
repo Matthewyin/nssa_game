@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遮挡检测修复测试</title>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .info-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .fix-details { background: #f1f8e9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .test-steps { background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; background: #2196f3; color: white; cursor: pointer; }
+        .highlight { background: #ffeb3b; padding: 2px 4px; border-radius: 3px; }
+        ol li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 遮挡检测修复测试</h1>
+        
+        <div class="info-box">
+            <h3>🐛 问题描述</h3>
+            <p>立方体上方已经没有遮挡了，但仍然显示"此立方体被上层田字格完全遮挡，请先消除上层的4个立方体"，无法点击。</p>
+        </div>
+        
+        <div class="fix-details">
+            <h3>✅ 修复内容</h3>
+            <ul>
+                <li><strong>过滤已消除立方体</strong>：遮挡检测现在只考虑 <span class="highlight">status !== 'gone'</span> 的立方体</li>
+                <li><strong>动态更新遮挡关系</strong>：当立方体被消除后，自动重新计算所有遮挡关系</li>
+                <li><strong>增强调试信息</strong>：点击被遮挡立方体时显示详细的遮挡信息</li>
+                <li><strong>实时状态检查</strong>：确保遮挡检测基于当前游戏状态</li>
+            </ul>
+        </div>
+        
+        <div class="test-steps">
+            <h3>🧪 测试步骤</h3>
+            <ol>
+                <li>点击下方按钮进入游戏</li>
+                <li>找到被田字格遮挡的立方体（显示为半透明）</li>
+                <li>消除上层的立方体</li>
+                <li>观察下层立方体是否立即变为可点击状态</li>
+                <li>如果仍然无法点击，查看浏览器控制台的调试信息</li>
+            </ol>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button onclick="window.open('/', '_blank')">🎮 开始测试游戏</button>
+            <button onclick="showDebugTips()">🔍 显示调试技巧</button>
+        </div>
+        
+        <div id="debug-tips" style="display: none;" class="info-box">
+            <h3>🔍 调试技巧</h3>
+            <ul>
+                <li><strong>打开控制台</strong>：F12 或右键 → 检查 → Console</li>
+                <li><strong>查看遮挡信息</strong>：点击无法点击的立方体，控制台会显示详细信息</li>
+                <li><strong>观察状态变化</strong>：消除立方体后会显示"遮挡关系已更新"消息</li>
+                <li><strong>验证修复</strong>：确认被遮挡立方体的 blockingTiles 中没有 status='gone' 的立方体</li>
+            </ul>
+        </div>
+        
+        <div class="info-box">
+            <h3>📝 预期结果</h3>
+            <p>修复后，当上层立方体被消除时，下层立方体应该：</p>
+            <ul>
+                <li>立即变为可点击状态</li>
+                <li>透明度恢复正常</li>
+                <li>不再显示遮挡提示消息</li>
+                <li>控制台显示"遮挡关系已更新"</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function showDebugTips() {
+            const tips = document.getElementById('debug-tips');
+            tips.style.display = tips.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 页面加载时的提示
+        window.addEventListener('load', () => {
+            console.log('🔧 遮挡检测修复测试页面已加载');
+            console.log('📋 测试要点：');
+            console.log('1. 消除立方体后遮挡关系应立即更新');
+            console.log('2. 已消除的立方体不应影响遮挡检测');
+            console.log('3. 点击被遮挡立方体时查看详细调试信息');
+        });
+    </script>
+</body>
+</html>
